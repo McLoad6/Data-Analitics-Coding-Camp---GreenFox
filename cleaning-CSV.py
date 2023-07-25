@@ -1,5 +1,7 @@
 import csv
 import sys
+import pandas
+import copy
 
 def read_csv(file):
     csv_list = []
@@ -17,11 +19,9 @@ def read_csv(file):
          return csv_list
     
 def write_list_to_csv(file_name, list:list):
-    csv_file = open(file_name, 'w')         #fontos formázni a file mengnyitását 'w'
+    csv_file = open(file_name, 'w')
     fieldnames = tuple(list[0])        
     writer = csv.writer(csv_file, fieldnames)
-    #writer.writeheader()
-    #list.pop(0)
     for row in list:
         writer.writerow(row)
     csv_file.close()
@@ -60,7 +60,7 @@ def column_request(sum_column:int):
     else:
         if is_it_in_range(value, sum_column):
             value = int(value)
-            number_list.append(value)
+            number_list.append(value-1)
             new_list = column_request(sum_column)
             number_list.extend(new_list)
             return number_list
@@ -69,31 +69,73 @@ def column_request(sum_column:int):
             number_list.extend(new_list)
             return number_list
 
-def column_selecter(csv_list:list):
-    print("The following columns in the CSV:")
-    header = csv_list[0]
+def choice_creator(choise_list:list, to_print:str):
+    print("The following choise are:")
     x = 0
-    for i in header:
+    for i in choise_list:
         x += 1
         print(f"{x} : {i}")
-    print("Choose columns which would you like to keep it. \nSelect the column NUMBER and press enter \nYou can set the order of the columns by choosing the desired order. \nFinish with 'q'")
+    print(to_print)
+    return x
+
+def column_selecter(csv_list:list, to_print:str):
+    header = csv_list[0]
+    x = choice_creator(header, to_print)
     selected_columns = column_request(x)
+    return selected_columns
+
+def filter_columns(csv_list:list):
+    selected_columns = column_selecter(csv_list, "Choose columns which would you like to keep it. \nSelect the column NUMBER and press enter \nYou can set the order of the columns by choosing the desired order. \nFinish with 'q'")
     print("You choose the following columns in this order:")
+    header = csv_list[0]
     for i in selected_columns:
-        print(header[i-1])
+        print(header[i])
     new_csv_list = []
     for row in csv_list:
         new_row = []
         for i in selected_columns:
-            new_row.append(row[i-1])
+            new_row.append(row[i])
         new_csv_list.append(new_row)
-    print(new_csv_list)
     write_list_to_csv("cleaned.csv", new_csv_list)
+
+def column_values(column:list):
+    elements = set()
+    for value in column:
+        elements.add(value)
+    list_of_elements = list(elements)
+    return list_of_elements
+
+def value_selecter(unique_elements:list, to_print:str):
+    x = choice_creator(unique_elements, to_print)
+    selected_values = column_request(x)
+    values = []
+    for i in selected_values:
+        values.append(unique_elements[i])
+    return values
+
+def filtering():
+    cleaned_list = read_csv("cleaned.csv")
+    selected_columns = column_selecter(cleaned_list, "Choose which column or columns want to filter:\nFinish with 'q'")
+    for column in selected_columns:
+        elements = []
+        for row in cleaned_list:
+            elements.append(row[column])
+        elements.pop(0)
+        unique_elements = column_values(elements)
+        filtered_values = value_selecter(unique_elements, "Choose wich values want to keep it:\nFinish with 'q'")
+        new_cleaned_list = []
+        new_cleaned_list.append(cleaned_list[0])
+        for i in range(1,len(cleaned_list)):
+            if cleaned_list[i][column] in filtered_values:
+                new_cleaned_list.append(cleaned_list[i])
+        cleaned_list = copy.deepcopy(new_cleaned_list)
+    write_list_to_csv("cleaned.csv", cleaned_list)
 
 
 def main():
     csv_list = read_csv(get_file_name())
-    column_selecter(csv_list)
+    filter_columns(csv_list)
+    filtering()
 
 if __name__ == "__main__":
     main()
