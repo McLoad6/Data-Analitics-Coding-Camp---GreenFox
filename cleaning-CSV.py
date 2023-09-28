@@ -6,13 +6,10 @@ import copy
 def read_csv(file):
     csv_list = []
     try: 
-        my_file = open(file)
-        try:
+        with open(file) as my_file:
             content = csv.reader(my_file)
             for line in content:
                 csv_list.append(line)
-        finally:
-            my_file.close()
     except OSError:
         sys.exit("I did not find the file")
     else:
